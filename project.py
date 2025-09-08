@@ -1,10 +1,18 @@
 import tkinter as tk
 from tkinter import messagebox
+import re
+import webbrowser
 
 # --- Core Logic Using Stacks ---
 back_stack = []
 forward_stack = []
 current_page = ["Home"]  # Using list to make it mutable
+
+# --- URL Validation Function ---
+def is_valid_url(url):
+    # Regular expression to match valid HTTP or HTTPS URLs
+    regex = r'^(http://|https://)[a-zA-Z0-9-_.]+(?:\.[a-zA-Z0-9-_.]+)+.*$'
+    return re.match(regex, url) is not None
 
 # --- GUI Functions ---
 def visit_page():
@@ -13,9 +21,17 @@ def visit_page():
         messagebox.showwarning("Input Error", "Please enter a URL.")
         return
 
+    if not is_valid_url(new_url):
+        messagebox.showwarning("Invalid URL", "Please enter a valid URL (starting with http:// or https://).")
+        return
+
     back_stack.append(current_page[0])
     current_page[0] = new_url
     forward_stack.clear()
+
+    # Open the page in the browser
+    webbrowser.open(new_url)
+
     update_display()
 
 def go_back():
