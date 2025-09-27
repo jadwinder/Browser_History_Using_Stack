@@ -29,7 +29,7 @@ Kruskal's algorithm is a classic **greedy algorithm** used to find a minimum spa
 1. **Clone the repository:**  
    ```bash
    git clone https://www.github.com/jadwinder/Kruskal_Algorithm_Visualizer.git
-   cd Kruskal_Algorithm_Visualizer.git
+   cd Kruskal_Algorithm_Visualizer
 
 
 ## Some Screenshots 
