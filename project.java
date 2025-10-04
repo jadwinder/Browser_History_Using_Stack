@@ -18,7 +18,7 @@ class Edge {
     Edge(int s, int d, int w) { src = s; dest = d; weight = w; }
 }
 
-public class treee extends JFrame {
+public class project extends JFrame {
 
     private CardLayout cardLayout;
     private JPanel mainPanel;
@@ -37,7 +37,7 @@ public class treee extends JFrame {
     private JTextArea edgeListArea;
     private int[] parentDSU;
 
-    public treee() {
+    public project() {
         setTitle("Kruskal's Algorithm Project");
         setSize(1100, 650);
         setDefaultCloseOperation(EXIT_ON_CLOSE);
@@ -45,6 +45,7 @@ public class treee extends JFrame {
 
         cardLayout = new CardLayout();
         mainPanel = new JPanel(cardLayout);
+
 
         // Intro screen
         JPanel introPanel = new JPanel() {
@@ -63,11 +64,8 @@ public class treee extends JFrame {
                 g.setFont(new Font("Monospaced", Font.BOLD, 30));
 
                 g.drawString("TOPIC : KRUSKAL ALGORITHM ", 300, 150);
-                
 
-                // g.setColor(Color.GREEN);
-                g.setColor(new Color(89, 195, 195));          // <-- correct usage
-
+                g.setColor(new Color(14, 39, 60)); // hex to rgb 0E273C
                 g.setFont(new Font("Monospaced", Font.BOLD, 25));
                 g.drawString("SUBMITTED TO : MS PRIYANKA GHAI", 320, 300);
                 g.drawString("SUBMITTED BY : JADWINDER SINGH", 320, 340);
@@ -79,6 +77,7 @@ public class treee extends JFrame {
                 
             }
         };
+        
         introPanel.addMouseListener(new MouseAdapter() {
             public void mouseClicked(MouseEvent e) {
                 cardLayout.show(mainPanel, "menu");
@@ -153,9 +152,8 @@ public class treee extends JFrame {
         cardLayout.show(mainPanel, "intro");
     }
 
-         // ----------------- Non-graphical Kruskal -----------------
 
-       private void showIntroduction() {
+    private void showIntroduction() {
     JTextPane textPane = new JTextPane();
     textPane.setEditable(false);
     textPane.setFont(new Font("Monospaced", Font.PLAIN, 14));
@@ -173,7 +171,7 @@ public class treee extends JFrame {
     Style normalStyle = textPane.addStyle("Normal", null);
 
     try {
-        doc.insertString(doc.getLength(), "Introduction:\n\n", boldStyle);
+        doc.insertString(doc.getLength(), "Introduction:\n", boldStyle);
         doc.insertString(doc.getLength(), 
                 "Kruskal's Algorithm is a Minimum Spanning Tree (MST) algorithm\n" +
                 "that finds a subset of edges that forms a tree including every vertex,\n" +
@@ -217,6 +215,9 @@ public class treee extends JFrame {
         e.printStackTrace();
     }
 
+    textPane.setCaretPosition(0); //goes to up by default
+
+
     JScrollPane scrollPane = new JScrollPane(textPane);
     scrollPane.setPreferredSize(new Dimension(800, 500));
 
@@ -229,21 +230,147 @@ public class treee extends JFrame {
 
      // ----------------- Non-graphical Kruskal -----------------
     private void runNonGraphical() {
-        n = Integer.parseInt(JOptionPane.showInputDialog("Enter number of vertices:"));
-        cost = new int[n + 1][n + 1];
-        parent = new int[n + 1];
+    NonGraphPanel nonGraph = new NonGraphPanel(cardLayout, mainPanel);
+    mainPanel.add(nonGraph, "nongraph");
+    cardLayout.show(mainPanel, "nongraph");
+}
 
-        consoleOutput.setText("Implementation of Kruskal's Algorithm\n");
-        for (int i = 1; i <= n; i++) {
-            String[] row = JOptionPane.showInputDialog(
-                "Enter row " + i + " of adjacency matrix (space separated):"
-            ).split(" ");
-            for (int j = 1; j <= n; j++) {
-                cost[i][j] = Integer.parseInt(row[j - 1]);
-                if (cost[i][j] == 0) cost[i][j] = 999;
+    // ---------------- Non-Graphical Kruskal Panel ----------------
+class NonGraphPanel extends JPanel {
+    private JTextField vertexField;
+    private JPanel matrixPanel;
+    private JTextArea outputArea;
+    private JTextField[][] matrixFields;
+    private int n;
+    private JPanel parentPanel; // reference to parent
+    private CardLayout cardLayout; // reference to CardLayout
+
+    NonGraphPanel(CardLayout cl, JPanel parent) {
+        this.cardLayout = cl;
+        this.parentPanel = parent;
+        setLayout(new BorderLayout());
+
+
+        // Main vertical panel
+        JPanel mainPanel = new JPanel();
+        mainPanel.setLayout(new BoxLayout(mainPanel, BoxLayout.Y_AXIS));
+        add(mainPanel, BorderLayout.CENTER);
+
+        // -------- Top buttons --------
+        JPanel buttonsPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
+        JButton backBtn = new JButton("Back to Menu");
+        JButton exitBtn = new JButton("Exit");
+        buttonsPanel.add(backBtn);
+        buttonsPanel.add(exitBtn);
+        mainPanel.add(buttonsPanel);
+
+        backBtn.addActionListener(e -> cardLayout.show(parentPanel, "menu"));
+        exitBtn.addActionListener(e -> System.exit(0));
+
+        // -------- Vertex input --------
+        JPanel vertexPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
+        vertexPanel.add(new JLabel("Enter number of vertices:"));
+        vertexField = new JTextField(5);
+        JButton generateBtn = new JButton("Generate Matrix");
+        vertexPanel.add(vertexField);
+        vertexPanel.add(generateBtn);
+        mainPanel.add(vertexPanel);
+
+        // -------- Matrix panel --------
+        matrixPanel = new JPanel();
+        JScrollPane matrixScroll = new JScrollPane(matrixPanel);
+        matrixScroll.setPreferredSize(new Dimension(600, 300));
+        mainPanel.add(matrixScroll);
+
+        // -------- Output + Run --------
+        JPanel bottomPanel = new JPanel();
+        bottomPanel.setLayout(new BorderLayout());
+        JButton runBtn = new JButton("Run Kruskal");
+        bottomPanel.add(runBtn, BorderLayout.NORTH);
+
+        outputArea = new JTextArea(10, 50);
+        outputArea.setFont(new Font("Monospaced", Font.PLAIN, 14));
+        outputArea.setEditable(false);
+        bottomPanel.add(new JScrollPane(outputArea), BorderLayout.CENTER);
+        mainPanel.add(bottomPanel);
+
+        // -------- Generate matrix action --------
+        generateBtn.addActionListener(e -> {
+            try {
+                n = Integer.parseInt(vertexField.getText());
+                matrixPanel.removeAll();
+                matrixPanel.setLayout(new GridLayout(n+1, n+1, 5, 5));
+                matrixFields = new JTextField[n][n];
+
+                matrixPanel.add(new JLabel(""));
+                for (int j = 1; j <= n; j++) {
+                    JLabel lbl = new JLabel("" + j, SwingConstants.CENTER);
+                    lbl.setFont(new Font("Serif", Font.BOLD, 14));
+                    matrixPanel.add(lbl);
+                }
+
+                for (int i = 0; i < n; i++) {
+                    JLabel rowLbl = new JLabel("" + (i+1), SwingConstants.CENTER);
+                    rowLbl.setFont(new Font("Serif", Font.BOLD, 14));
+                    matrixPanel.add(rowLbl);
+
+                    for (int j = 0; j < n; j++) {
+                        JTextField tf = new JTextField("");
+                        tf.setHorizontalAlignment(SwingConstants.CENTER);
+                        matrixFields[i][j] = tf;
+                        matrixPanel.add(tf);
+                    }
+                }
+
+                matrixPanel.revalidate();
+                matrixPanel.repaint();
+            } catch (Exception ex) {
+                JOptionPane.showMessageDialog(this, "Enter valid number of vertices!");
+            }
+        });
+
+        // -------- Run Kruskal action --------
+        runBtn.addActionListener(e -> runKruskal());
+    }
+
+    
+    private void runKruskal() {
+        if (matrixFields == null) return;
+
+        int[][] cost = new int[n+1][n+1];
+        int[] parent = new int[n+1];
+        outputArea.setText("Running Kruskal's Algorithm...\n");
+
+        // read matrix with validation
+    for (int i = 0; i < n; i++) {
+        for (int j = 0; j < n; j++) {
+            String text = matrixFields[i][j].getText().trim();
+
+            // Check if field is empty
+            if (text.isEmpty()) {
+                JOptionPane.showMessageDialog(this, 
+                    "Please fill all values in the matrix before running Kruskal!", 
+                    "Input Error", JOptionPane.ERROR_MESSAGE);
+                return; // stop execution
+            }
+
+            
+
+            try {
+                int val = Integer.parseInt(text);
+                cost[i+1][j+1] = (val == 0 ? 999 : val); // replace 0 with large value
+            } catch (NumberFormatException ex) {
+                JOptionPane.showMessageDialog(this, 
+                    "Invalid input at cell (" + (i+1) + "," + (j+1) + "). Please enter numbers only.", 
+                    "Input Error", JOptionPane.ERROR_MESSAGE);
+                return; // stop execution
             }
         }
+    }
 
+
+
+        //kruskal algorithm execution
         int ne = 1, mincost = 0;
         while (ne < n) {
             int min = 999, a = -1, b = -1, u = -1, v = -1;
@@ -251,26 +378,35 @@ public class treee extends JFrame {
                 for (int j = 1; j <= n; j++) {
                     if (cost[i][j] < min) {
                         min = cost[i][j];
-                        a = u = i;
-                        b = v = j;
+                        a = u = i; b = v = j;
                     }
                 }
             }
-            u = find(u);
-            v = find(v);
-            if (uni(u, v)) {
-                consoleOutput.append(ne + " edge (" + a + "," + b + ") = " + min + "\n");
-                ne++;
+            while (parent[u] != 0) u = parent[u];
+            while (parent[v] != 0) v = parent[v];
+            if (u != v) {
+                outputArea.append("Edge " + ne + " : ("+a+","+b+") cost="+min+"\n");
+                parent[v] = u;
                 mincost += min;
-            }
-            cost[a][b] = cost[b][a] = 999;
+                ne++;
+
+                // Highlight chosen edge
+                Font boldFont = new Font("Monospaced", Font.BOLD, 14);
+
+                matrixFields[a-1][b-1].setBackground(Color.GREEN);
+                matrixFields[a-1][b-1].setFont(boldFont);
+                matrixFields[a-1][b-1].setForeground(Color.BLACK);
+
+                matrixFields[b-1][a-1].setBackground(Color.GREEN);
+                matrixFields[b-1][a-1].setFont(boldFont);
+                matrixFields[b-1][a-1].setForeground(Color.BLACK);
+                cost[a][b] = cost[b][a] = 999;
         }
-        consoleOutput.append("Minimum cost = " + mincost + "\n");
-
-        cardLayout.show(mainPanel, "console");
+        outputArea.append("Minimum cost = " + mincost + "\n");
     }
+}
 
-
+}
 
 
     private int find(int i) {
@@ -288,6 +424,13 @@ public class treee extends JFrame {
 
     // ----------------- Graphical Kruskal -----------------
     private void runGraphical() {
+
+        // Stop old timer if running
+        if (mstTimer != null && mstTimer.isRunning()) {
+            mstTimer.stop();
+        }
+
+
         edges = new ArrayList<>();
         // same sample edges from second.java
         edges.add(new Edge(1,6,10));
@@ -301,8 +444,13 @@ public class treee extends JFrame {
         edges.add(new Edge(5,6,25));
 
         Collections.sort(edges, Comparator.comparingInt(e -> e.weight));
-        parentDSU = new int[8]; // 1-based
+        parentDSU = new int[8]; // 1-based reset DSU
 
+        //reset state
+        mstWeight = 0;   
+        chosenWeights = new ArrayList<>();
+        step = 0;
+        
         JPanel graphsPanel = new JPanel(new GridLayout(1, 2));
         originalGraph = new GraphPanel(edges, false, "Original Graph");
         mstGraph = new MSTPanel(edges, "MST Construction");
@@ -329,7 +477,10 @@ public class treee extends JFrame {
 
 
         // Button actions
-        backBtn.addActionListener(e -> cardLayout.show(mainPanel, "menu"));
+        backBtn.addActionListener(e -> {
+            if (mstTimer != null) mstTimer.stop(); // stop timer when going back
+            cardLayout.show(mainPanel, "menu");
+        });
         exitBtn.addActionListener(e -> System.exit(0));
 
         buttonsPanel.add(backBtn);
@@ -341,6 +492,11 @@ public class treee extends JFrame {
         container.add(scrollPane, BorderLayout.SOUTH);
         container.add(buttonsPanel, BorderLayout.NORTH); // top of edge list or bottom as needed
 
+        // Remove old "graph" panel if it exists
+        if (Arrays.asList(mainPanel.getComponents()).contains(container)) {
+             mainPanel.remove(container);
+        }
+    
 
         mainPanel.add(container, "graph");
         cardLayout.show(mainPanel, "graph");
@@ -351,19 +507,19 @@ public class treee extends JFrame {
         mstTimer.start();
     }
 
-        private int mstWeight = 0;   
-        private int edgesInMST = 0;  
-        private int numVertices = 7; // total vertices in your graph
-        private java.util.List<Integer> chosenWeights = new ArrayList<>();
+        
+    // Fields
+    private javax.swing.Timer mstTimer;
+    private int mstWeight;                          // total MST cost
+    private java.util.List<Integer> chosenWeights;  // store weights of chosen edges
+    
+    // ----------------- Next Step (with MST sum) -----------------
+    private void nextStep() {
+    if (step >= edges.size()) {
+        if (mstTimer != null) mstTimer.stop(); // stop timer
 
-
-        private javax.swing.Timer mstTimer;
-
-        private void nextStep() {
-        if (step >= edges.size()) {
-            if (mstTimer != null) mstTimer.stop(); // stop timer
-
-            // All edges processed -> final MST message
+        // All edges processed -> final MST message
+        if (!chosenWeights.isEmpty()) {
             StringBuilder sb = new StringBuilder();
             for (int i = 0; i < chosenWeights.size(); i++) {
                 sb.append(chosenWeights.get(i));
@@ -371,33 +527,42 @@ public class treee extends JFrame {
             }
             edgeListArea.append("\nGraph Completed!\n");
             edgeListArea.append("Minimum Weight (MST Cost) = " + sb + " = " + mstWeight + "\n");
-            edgeListArea.setCaretPosition(edgeListArea.getDocument().getLength());
-            return;
+
+            // Optional: also show in a popup
+            JOptionPane.showMessageDialog(this,
+                "Graph Completed!\nMinimum Weight (MST Cost) = " + sb + " = " + mstWeight,
+                "Kruskal Result",
+                JOptionPane.INFORMATION_MESSAGE
+            );
         }
-
-        Edge edge = edges.get(step);
-        int u = findDSU(edge.src), v = findDSU(edge.dest);
-
-        if (u != v) {
-            unionDSU(u, v);
-            edge.chosen = true;
-            mstWeight += edge.weight;                     // add weight to total
-            chosenWeights.add(edge.weight);               // record weight
-            edgeListArea.append("Chosen   : (" + edge.src + "," + edge.dest + ") w=" + edge.weight + "\n");
-        } else {
-            edge.rejected = true;
-            edgeListArea.append("Rejected : (" + edge.src + "," + edge.dest + ") w=" + edge.weight + "\n");
-        }
-
-        // Auto-scroll
         edgeListArea.setCaretPosition(edgeListArea.getDocument().getLength());
-
-        // Repaint graphs
-        originalGraph.repaint();
-        mstGraph.repaint();
-
-        step++;
+        return;
     }
+
+    Edge edge = edges.get(step);
+    int u = findDSU(edge.src), v = findDSU(edge.dest);
+
+    if (u != v) {
+        unionDSU(u, v);
+        edge.chosen = true;
+        mstWeight += edge.weight;              // add weight to total
+        chosenWeights.add(edge.weight);        // record weight
+        edgeListArea.append("Chosen   : (" + edge.src + "," + edge.dest + ") w=" + edge.weight + "\n");
+    } else {
+        edge.rejected = true;
+        edgeListArea.append("Rejected : (" + edge.src + "," + edge.dest + ") w=" + edge.weight + "\n");
+    }
+
+    // Auto-scroll
+    edgeListArea.setCaretPosition(edgeListArea.getDocument().getLength());
+
+    // Repaint graphs
+    originalGraph.repaint();
+    mstGraph.repaint();
+
+    step++;
+}
+
 
 
 
@@ -408,7 +573,7 @@ public class treee extends JFrame {
 
     private void unionDSU(int i, int j) { parentDSU[findDSU(i)] = findDSU(j); }
 
-    // Panels from second.java
+   
     class GraphPanel extends JPanel {
         java.util.List<Edge> edges;
         boolean onlyMST;
@@ -488,6 +653,7 @@ public class treee extends JFrame {
     }
 
     public static void main(String[] args) {
-        SwingUtilities.invokeLater(() -> new treee().setVisible(true));
+        SwingUtilities.invokeLater(() -> new project().setVisible(true));
     }
+
 }
